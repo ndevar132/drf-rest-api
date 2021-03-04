@@ -30,7 +30,6 @@ class RegisterView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         user_data = serializer.data
-
         user = User.objects.get(email=user_data['email'])
 
         token = RefreshToken.for_user(user).access_token
@@ -46,7 +45,7 @@ class RegisterView(generics.GenericAPIView):
         }
         Util.send_email(data)
 
-        return Response(user_data, status=status.HTTP_201_CREATED)
+        return Response(user_data, status=status.HTTP_200_OK)
 
 
 class VerifyEmail(views.APIView):
