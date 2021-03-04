@@ -43,7 +43,15 @@ class LoginSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=255, min_length=3)
     password = serializers.CharField(max_length=68, min_length=6, write_only=True)
     username = serializers.EmailField(max_length=255, min_length=3, read_only=True)
-    tokens = serializers.CharField(max_length=68, min_length=6, read_only=True)
+    tokens = serializers.SerializerMethodField()
+
+    def get_tokens(self, obj):
+        user = User.objects.get(email=obj['email'])
+
+        return {
+            'access': user.tokens()['access'],
+            'refresh': user.tokens()['refresh']
+        }
 
     class Meta:
         model = User
@@ -73,6 +81,8 @@ class LoginSerializer(serializers.ModelSerializer):
 class ResetPasswordEmailSerializer(serializers.Serializer):
     email = serializers.EmailField(min_length=2)
 
+    redirect_url = serializers.CharField(max_length=500, required=False)
+
     class Meta:
         fields = ['email']
 
@@ -89,8 +99,10 @@ class ResetPasswordEmailSerializer(serializers.Serializer):
                                         'token': token
                                     })
 
+            redirect_url = self.context['request'].data.get('redirect_url', '')
             absurl = 'http://' + current_site + relative_link
-            email_body = 'Hello,\nUse link below to reset your password\n' + absurl
+            email_body = 'Hello,\nUse link below to reset your password\n' + absurl + \
+                         '?redirect_url=' + redirect_url
             data = {
                 'email_body': email_body,
                 'email_subject': 'Reset your password',
